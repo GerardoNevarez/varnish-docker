@@ -6,7 +6,6 @@ Varnish will make of the following environment variables.
 
 	VARNISH_BACKEND_PORT 80
 	VARNISH_BACKEND_IP 172.17.42.1
-	VARNISH_PORT 80
 
 ### Use the pre built image
 The pre built image can be downloaded using docker directly. After that you do not need to use this command again, you will have the image on your machine.
