@@ -32,8 +32,8 @@ ENV VARNISH_BACKEND_PROBE_HOST localhost
 # Expose port 80
 EXPOSE 80
 
-# Expose volumes to be able to use data containers
-VOLUMES ["/var/lib/varnish", "/etc/varnish"]
+# Expose varnish lib as a volume so it can persist outside the container
+VOLUME ["/var/lib/varnish"]
 
 ADD start.sh /start.sh
 CMD ["/start.sh"]
