@@ -1,24 +1,28 @@
-FROM debian:jessie
-
-MAINTAINER Dennis Clark <boomfish@gmail.com>
-
+#FROM debian:jessie
+#
+#MAINTAINER Dennis Clark <boomfish@gmail.com>
+#
 #
 # Varnish installation steps based on https://www.varnish-cache.org/installation/debian
 #
-
+#
 # We don't have curl installed yet so grab the Varnish package signing key from a PGP keyserver
-RUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 60e7c096c4deffeb
+#RUN apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 60e7c096c4deffeb
 
 # We must install apt-transport-https before we can add varnish to sources.list
-RUN apt-get -q update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -qy \
-        apt-transport-https && \
-    echo "deb https://repo.varnish-cache.org/debian/ jessie varnish-4.0" >> /etc/apt/sources.list.d/varnish-cache.list && \
-    apt-get -q update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -qy \
-        varnish && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+#RUN apt-get -q update && \
+#    DEBIAN_FRONTEND=noninteractive apt-get install -qy \
+#        apt-transport-https && \
+#    echo "deb https://repo.varnish-cache.org/debian/ jessie varnish-4.0" >> /etc/apt/sources.list.d/varnish-cache.list && \
+#    apt-get -q update && \
+#    DEBIAN_FRONTEND=noninteractive apt-get install -qy \
+#        varnish && \
+#    apt-get clean && \
+#    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+FROM alpine
+MAINTAINER Gerardo Nevarez Moorillon <gnevarez@gmail.com>
+RUN apk add --update bash varnish && rm -rf /var/cache/apk/*
 
 # Make our custom VCLs available on the container
 ADD default.vcl /etc/varnish/default.vcl
