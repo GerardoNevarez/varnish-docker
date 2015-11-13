@@ -33,6 +33,8 @@ sub vcl_recv {
     if ((req.method  == "GET" || req.method == "HEAD") && req.url ~ "^/varnish_ruok") {
         return (synth(200, "OK"));
     }
+   
+    set req.http.host = "${VARNISH_BACKEND_PROBE_HOST}" ;
 
     set req.backend_hint = vdir.backend(); # send all traffic to the vdir director
 
