@@ -16,16 +16,16 @@ backend server1 { # Define one backend
             "Connection: close"
             "User-Agent: Varnish Health Probe";
 
-        .timeout = 5s; # check the health of each backend every 5 seconds
-        .interval = 1s; # timing out after 1 second.
+        .timeout = 15s; # check the health of each backend every x seconds
+        .interval = 10s; # timing out after 1 second.
         .window = 8; # If 3 out of the last 5 polls succeeded the backend is considered healthy, otherwise it will be marked as sick
         .threshold = 3;
         .initial = 2; # On startup act as if the previous 2 polls were OK so only 1 more OK within the window is needed for the backend to be considered healthy
     }
 
   .first_byte_timeout     = 300s;   # How long to wait before we receive a first byte from our backend?
-  .connect_timeout        = 10s;     # How long to wait for a backend connection?
-  .between_bytes_timeout  = 5s;     # How long to wait between bytes received from our backend?
+  .connect_timeout        = 30s;     # How long to wait for a backend connection?
+  .between_bytes_timeout  = 10s;     # How long to wait between bytes received from our backend?
 }
 
 acl purge {
