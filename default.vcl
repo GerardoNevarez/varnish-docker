@@ -16,8 +16,8 @@ backend server1 { # Define one backend
             "Connection: close"
             "User-Agent: Varnish Health Probe";
 
-        .timeout = 15s; # check the health of each backend every x seconds
-        .interval = 10s; # timing out after 1 second.
+        .timeout = 30s; # check the health of each backend every x seconds
+        .interval = 15s; # timing out after x second.
         .window = 8; # If 3 out of the last 5 polls succeeded the backend is considered healthy, otherwise it will be marked as sick
         .threshold = 3;
         .initial = 2; # On startup act as if the previous 2 polls were OK so only 1 more OK within the window is needed for the backend to be considered healthy
@@ -130,8 +130,8 @@ sub vcl_recv {
     unset req.http.Cookie;
     
     # Disable Caching
-    #return (hash);
-    return (pass);
+    #return (pass);
+    return (hash);
   }
 
   # Remove all cookies for static files
@@ -142,8 +142,8 @@ sub vcl_recv {
     unset req.http.Cookie;
 
     # Disable Caching
-    #return (hash);
-    return (pass);
+    #return (pass);
+    return (hash);
   }
 
   # Send Surrogate-Capability headers to announce ESI support to backend
@@ -157,8 +157,8 @@ sub vcl_recv {
     }
 
     # Disable Caching
-    #return (hash);
-    return (pass);
+    #return (pass);
+    return (hash);
 }
 
 sub vcl_pipe {
