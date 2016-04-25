@@ -290,9 +290,9 @@ sub vcl_backend_response {
     set beresp.http.Location = regsub(beresp.http.Location, ":[0-9]+", "");
   }
 
-  # Set 2min cache if unset for static files
+  # Set 7day cache if unset for static files
   if (beresp.ttl <= 0s || beresp.http.Set-Cookie || beresp.http.Vary == "*") {
-    set beresp.ttl = 72h; # Important, you shouldn't rely on this, SET YOUR HEADERS in the backend
+    set beresp.ttl = 168h; # Important, you shouldn't rely on this, SET YOUR HEADERS in the backend
     set beresp.uncacheable = true;
     return (deliver);
   }
@@ -301,8 +301,8 @@ sub vcl_backend_response {
   # make Varnish keep all objects for 48 hours beyond their TTL
   set beresp.grace = 48h;
 
-  #cache for 72h
-  set beresp.ttl = 72h;
+  #cache for 168h
+  set beresp.ttl = 168h;
 
   return (deliver);
 }
