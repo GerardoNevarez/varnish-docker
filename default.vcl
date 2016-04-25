@@ -25,7 +25,7 @@ backend server1 { # Define one backend
 
   .first_byte_timeout     = 300s;   # How long to wait before we receive a first byte from our backend?
   .connect_timeout        = 300s;     # How long to wait for a backend connection?
-  .between_bytes_timeout  = 20;     # How long to wait between bytes received from our backend?
+  .between_bytes_timeout  = 60s;     # How long to wait between bytes received from our backend?
 }
 
 acl purge {
@@ -178,17 +178,6 @@ sub vcl_recv {
     unset req.http.cookie;
   }
 
-  if (req.http.Cache-Control ~ "(?i)no-cache") {
-  #if (req.http.Cache-Control ~ "(?i)no-cache" && client.ip ~ editors) { # create the acl editors if you want to restrict the Ctrl-F5
-  # http://varnish.projects.linpro.no/wiki/VCLExampleEnableForceRefresh
-  # Ignore requests via proxy caches and badly behaved crawlers
-  # like msnbot that send no-cache with every request.
-    if (! (req.http.Via || req.http.User-Agent ~ "(?i)bot" || req.http.X-Purge)) {
-      #set req.hash_always_miss = true; # Doesn't seems to refresh the object in the cache
-      return(purge); # Couple this with restart in vcl_purge and X-Purge header to avoid loops
-    }
-  }
-
 # https://wiki.mikejung.biz/Varnish
 if (req.http.Accept-Encoding) {
           if (req.http.User-Agent ~ "MSIE 6") {
@@ -313,7 +302,7 @@ sub vcl_backend_response {
   set beresp.grace = 48h;
 
   #cache for 72h
-  set beresp.ttl = 72;
+  set beresp.ttl = 72h;
 
   return (deliver);
 }
