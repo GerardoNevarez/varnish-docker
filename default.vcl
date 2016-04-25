@@ -16,8 +16,8 @@ backend server1 { # Define one backend
             "Connection: close"
             "User-Agent: Varnish Health Probe";
 
-        .timeout = 30s; # check the health of each backend every x seconds
-        .interval = 15s; # timing out after x second.
+        .timeout = 300s; # check the health of each backend every x seconds
+        .interval = 120s; # timing out after x second.
         .window = 8; # If 3 out of the last 5 polls succeeded the backend is considered healthy, otherwise it will be marked as sick
         .threshold = 3;
         .initial = 2; # On startup act as if the previous 2 polls were OK so only 1 more OK within the window is needed for the backend to be considered healthy
@@ -223,14 +223,17 @@ sub vcl_backend_response {
 
   # Set 2min cache if unset for static files
   if (beresp.ttl <= 0s || beresp.http.Set-Cookie || beresp.http.Vary == "*") {
-    set beresp.ttl = 120s; # Important, you shouldn't rely on this, SET YOUR HEADERS in the backend
+    set beresp.ttl = 72h; # Important, you shouldn't rely on this, SET YOUR HEADERS in the backend
     set beresp.uncacheable = true;
     return (deliver);
   }
 
   # Allow stale content, in case the backend goes down.
-  # make Varnish keep all objects for 6 hours beyond their TTL
-  set beresp.grace = 6h;
+  # make Varnish keep all objects for 48 hours beyond their TTL
+  set beresp.grace = 48h;
+
+  #cache for 72h
+  set beresp.ttl = 72;
 
   return (deliver);
 }
