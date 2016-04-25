@@ -24,8 +24,8 @@ backend server1 { # Define one backend
     }
 
   .first_byte_timeout     = 300s;   # How long to wait before we receive a first byte from our backend?
-  .connect_timeout        = 30s;     # How long to wait for a backend connection?
-  .between_bytes_timeout  = 10s;     # How long to wait between bytes received from our backend?
+  .connect_timeout        = 300s;     # How long to wait for a backend connection?
+  .between_bytes_timeout  = 20;     # How long to wait between bytes received from our backend?
 }
 
 acl purge {
@@ -121,6 +121,86 @@ sub vcl_recv {
       return (pass);
     }
 
+
+
+  # Only cache GET or HEAD requests. This makes sure the POST requests are always passed.
+  if (req.method != "GET" && req.method != "HEAD") {
+    return (pass);
+  }
+
+  # https://github.com/mattiasgeniar/varnish-4.0-configuration-templates/blob/master/default.vcl
+
+  # Some generic URL manipulation, useful for all templates that follow
+  # First remove the Google Analytics added parameters, useless for our backend
+  if (req.url ~ "(\?|&)(utm_source|utm_medium|utm_campaign|utm_content|gclid|cx|ie|cof|siteurl)=") {
+    set req.url = regsuball(req.url, "&(utm_source|utm_medium|utm_campaign|utm_content|gclid|cx|ie|cof|siteurl)=([A-z0-9_\-\.%25]+)", "");
+    set req.url = regsuball(req.url, "\?(utm_source|utm_medium|utm_campaign|utm_content|gclid|cx|ie|cof|siteurl)=([A-z0-9_\-\.%25]+)", "?");
+    set req.url = regsub(req.url, "\?&", "?");
+    set req.url = regsub(req.url, "\?$", "");
+  }
+
+  # Strip hash, server doesn't need it.
+  if (req.url ~ "\#") {
+    set req.url = regsub(req.url, "\#.*$", "");
+  }
+
+  # Strip a trailing ? if it exists
+  if (req.url ~ "\?$") {
+    set req.url = regsub(req.url, "\?$", "");
+  }
+
+  # Some generic cookie manipulation, useful for all templates that follow
+  # Remove the "has_js" cookie
+  set req.http.Cookie = regsuball(req.http.Cookie, "has_js=[^;]+(; )?", "");
+
+  # Remove any Google Analytics based cookies
+  set req.http.Cookie = regsuball(req.http.Cookie, "__utm.=[^;]+(; )?", "");
+  set req.http.Cookie = regsuball(req.http.Cookie, "_ga=[^;]+(; )?", "");
+  set req.http.Cookie = regsuball(req.http.Cookie, "_gat=[^;]+(; )?", "");
+  set req.http.Cookie = regsuball(req.http.Cookie, "utmctr=[^;]+(; )?", "");
+  set req.http.Cookie = regsuball(req.http.Cookie, "utmcmd.=[^;]+(; )?", "");
+  set req.http.Cookie = regsuball(req.http.Cookie, "utmccn.=[^;]+(; )?", "");
+
+  # Remove DoubleClick offensive cookies
+  set req.http.Cookie = regsuball(req.http.Cookie, "__gads=[^;]+(; )?", "");
+
+  # Remove the Quant Capital cookies (added by some plugin, all __qca)
+  set req.http.Cookie = regsuball(req.http.Cookie, "__qc.=[^;]+(; )?", "");
+
+  # Remove the AddThis cookies
+  set req.http.Cookie = regsuball(req.http.Cookie, "__atuv.=[^;]+(; )?", "");
+
+  # Remove a ";" prefix in the cookie if present
+  set req.http.Cookie = regsuball(req.http.Cookie, "^;\s*", "");
+
+  # Are there cookies left with only spaces or that are empty?
+  if (req.http.cookie ~ "^\s*$") {
+    unset req.http.cookie;
+  }
+
+  if (req.http.Cache-Control ~ "(?i)no-cache") {
+  #if (req.http.Cache-Control ~ "(?i)no-cache" && client.ip ~ editors) { # create the acl editors if you want to restrict the Ctrl-F5
+  # http://varnish.projects.linpro.no/wiki/VCLExampleEnableForceRefresh
+  # Ignore requests via proxy caches and badly behaved crawlers
+  # like msnbot that send no-cache with every request.
+    if (! (req.http.Via || req.http.User-Agent ~ "(?i)bot" || req.http.X-Purge)) {
+      #set req.hash_always_miss = true; # Doesn't seems to refresh the object in the cache
+      return(purge); # Couple this with restart in vcl_purge and X-Purge header to avoid loops
+    }
+  }
+
+# https://wiki.mikejung.biz/Varnish
+if (req.http.Accept-Encoding) {
+          if (req.http.User-Agent ~ "MSIE 6") {
+            unset req.http.Accept-Encoding;
+          } elsif (req.http.Accept-Encoding ~ "gzip") {
+            set req.http.Accept-Encoding = "gzip";
+          } elsif (req.http.Accept-Encoding ~ "deflate") {
+            set req.http.Accept-Encoding = "deflate";
+          } else {
+            unset req.http.Accept-Encoding;
+          }
+        }
 
 
   # Large static files are delivered directly to the end-user without
