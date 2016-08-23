@@ -61,6 +61,11 @@ sub vcl_recv {
   # which backend to use.
   # also used to modify the request
 
+  # CVE-2016-5387
+  # https://httpoxy.org/#fix-now
+  unset req.http.proxy;
+
+
     # Add ping url to test Varnish status.
     if ((req.method  == "GET" || req.method == "HEAD") && req.url ~ "^/varnish_ruok") {
         return (synth(200, "OK"));
